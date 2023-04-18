@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "rust-struct-bindgen-impl",
+    "rust-struct-bindgen-proc-macro",
+    "rust-struct-bindgen-cli",
+]

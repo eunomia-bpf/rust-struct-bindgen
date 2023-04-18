@@ -1,0 +1,15 @@
+[package]
+name = "rust-struct-bindgen-proc-macro"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+faerie = "0.16.0"
+proc-macro2 = "1.0.56"
+rust-struct-bindgen-impl = { path = "../rust-struct-bindgen-impl" }
+syn = "2.0.15"
+
+[lib]
+proc-macro = true
