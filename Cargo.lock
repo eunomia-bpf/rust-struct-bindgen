@@ -379,6 +379,7 @@ dependencies = [
  "proc-macro2 1.0.56",
  "rust-struct-bindgen-impl",
  "syn 2.0.15",
+ "target-lexicon",
 ]
 
 [[package]]
