@@ -1,34 +1,71 @@
 use anyhow::Result;
 use btf::types::{Btf, BtfType};
+use cache::SizeResolveCache;
 use proc_macro2::TokenStream;
 
 pub use btf;
 pub use object;
+
+use quote::quote;
 use types::{
-    array::generate_binding_for_array, float::generate_binding_for_float,
-    integer::generate_binding_for_integer, structure::generate_binding_for_struct,
+    array::generate_binding_for_array, enumeration::generate_binding_for_enum,
+    float::generate_binding_for_float, integer::generate_binding_for_integer,
+    structure::generate_binding_for_struct,
 };
+pub(crate) mod cache;
 pub(crate) mod helper;
 pub(crate) mod types;
+
+
 pub fn generate_bindgen_token_stream(btf: &Btf) -> Result<TokenStream> {
-    let mut result = TokenStream::default();
+    let mut inner_impl = TokenStream::new();
+    let mut outer_impl = TokenStream::new();
+    let mut size_cache = SizeResolveCache::new(btf);
     for (ty_id, ty) in btf.types().iter().enumerate().map(|v| (v.0 as u32, v.1)) {
         match ty {
             BtfType::Struct(comp) => {
-                result.extend(generate_binding_for_struct(btf, comp, ty_id)?);
+                let (outer,inner) = generate_binding_for_struct(
+                    btf,
+                    comp,
+                    ty_id,
+                    &mut size_cache,
+                )?;
+                inner_impl.extend(inner);
+                outer_impl.extend(outer);
             }
             BtfType::Int(btf_int) => {
-                result.extend(generate_binding_for_integer(btf, btf_int, ty_id)?);
+                inner_impl.extend(generate_binding_for_integer(
+                    btf,
+                    btf_int,
+                    ty_id,
+                    &mut size_cache,
+                )?);
             }
             BtfType::Array(array) => {
-                result.extend(generate_binding_for_array(btf, array, ty_id)?);
+                inner_impl.extend(generate_binding_for_array(
+                    btf,
+                    array,
+                    ty_id,
+                    &mut size_cache,
+                )?);
             }
-            BtfType::Float(ft) => result.extend(generate_binding_for_float(btf, ft, ty_id)?),
+            BtfType::Float(ft) => inner_impl.extend(generate_binding_for_float(btf, ft, ty_id)?),
+            BtfType::Enum(btf_enum) => {
+                let (outer,inner) = generate_binding_for_enum(btf, btf_enum, ty_id)?;
+                inner_impl.extend(inner);
+                outer_impl.extend(outer);
+            }
             _ => continue,
         }
     }
 
-    Ok(result)
+    Ok(quote!{
+        #[allow(unused)]
+        pub mod inner_impl {
+            #inner_impl
+        }
+        #outer_impl
+    })
 }
 
 #[cfg(test)]

@@ -3,11 +3,15 @@ use btf::types::{Btf, BtfInt, BtfIntEncoding};
 use proc_macro2::{Ident, Literal, Span, TokenStream};
 use quote::quote;
 
-use crate::helper::{func_names_ident, ty_name};
+use crate::{
+    cache::SizeResolveCache,
+    helper::{func_names_ident, ty_name},
+};
 pub(crate) fn generate_binding_for_integer(
-    btf: &Btf,
+    _btf: &Btf,
     btf_int: &BtfInt,
     ty_id: u32,
+    size_resolver: &mut SizeResolveCache,
 ) -> Result<TokenStream> {
     if btf_int.bits % 8 != 0 {
         bail!("Bitfield is not supported now");
@@ -30,7 +34,7 @@ pub(crate) fn generate_binding_for_integer(
         },
         Span::call_site(),
     );
-    let type_size_lit = Literal::usize_suffixed(btf.get_size_of(ty_id) as usize);
+    let type_size_lit = Literal::usize_suffixed(size_resolver.resolve(ty_id));
     let type_name_ident = Ident::new(&ty_name(ty_id), Span::call_site());
     let (de_func, ser_func) = func_names_ident(ty_id);
     let de_impl = if matches!(btf_int.encoding, BtfIntEncoding::Bool) {
@@ -52,7 +56,10 @@ pub(crate) fn generate_binding_for_integer(
         }
     };
     Ok(quote! {
+        #[allow(unused)]
+        #[allow(non_camel_case_types)]
         pub type #type_name_ident = #underlying_type_ident;
+        #[allow(unused)]
         pub fn #de_func (b: &[u8]) -> Result< #type_name_ident, String> {
             if b.len() != #type_size_lit {
                 return Err(format!("Expected a slice with {} bytes", #type_size_lit))
@@ -61,6 +68,7 @@ pub(crate) fn generate_binding_for_integer(
                 #de_impl
             )
         }
+        #[allow(unused)]
         pub fn #ser_func (v: & #type_name_ident) -> Result< Vec<u8>, String> {
             Ok(
                 #ser_impl

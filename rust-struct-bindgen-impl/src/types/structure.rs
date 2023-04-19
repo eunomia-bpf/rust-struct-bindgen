@@ -1,3 +1,4 @@
+use crate::cache::SizeResolveCache;
 use crate::helper::{func_names_ident, lookup_types, ty_name};
 use anyhow::anyhow;
 use anyhow::{bail, Result};
@@ -8,7 +9,8 @@ pub(crate) fn generate_binding_for_struct(
     btf: &Btf,
     comp: &BtfComposite,
     ty_id: u32,
-) -> Result<TokenStream> {
+    size_resolver: &mut SizeResolveCache,
+) -> Result<(TokenStream, TokenStream)> {
     let st_name = Ident::new(&ty_name(ty_id), Span::call_site());
     let alias = Ident::new(comp.name, Span::call_site());
 
@@ -43,7 +45,7 @@ pub(crate) fn generate_binding_for_struct(
             r2.push(i2);
             r3.push(i3);
             r4.push(Ident::new(&format!("f_{}", v.name), Span::call_site()));
-            r5.push(Literal::usize_suffixed(btf.get_size_of(v.type_id) as usize));
+            r5.push(Literal::usize_suffixed(size_resolver.resolve(v.type_id)));
             r6.push(Literal::usize_suffixed((v.bit_offset / 8) as usize));
             Ok(())
         })?;
@@ -51,19 +53,19 @@ pub(crate) fn generate_binding_for_struct(
     };
 
     let struct_decl = quote! {
+        #[allow(unused)]
+        #[allow(non_camel_case_types)]
         #[repr(C)]
         pub struct #st_name {
             #(#field_names: #field_type_idents),*
         }
     };
-    let type_alias_decl = quote! {
-        pub type #alias = #st_name;
-    };
-
     let (der_name, ser_name) = func_names_ident(ty_id);
     let type_size = Literal::usize_suffixed(comp.sz as _);
 
     let deserialize_func = quote! {
+        #[allow(unused)]
+        #[allow(clippy::identity_op)]
         pub fn #der_name (b: &[u8]) -> std::result::Result< #st_name, std::string::String> {
             if b.len() != #type_size {
                 return Err(format!("Expected a slice with length {}", #type_size))
@@ -79,8 +81,11 @@ pub(crate) fn generate_binding_for_struct(
                 }
             )
         }
+
     };
     let serialize_func = quote! {
+        #[allow(unused)]
+        #[allow(clippy::identity_op)]
         pub fn #ser_name (t: & #st_name) -> std::result::Result < Vec<u8> , std::string::String> {
             let mut result = vec![0u8; #type_size ];
             #(
@@ -93,10 +98,28 @@ pub(crate) fn generate_binding_for_struct(
             Ok(result)
         }
     };
-    Ok(quote! {
-        #struct_decl
-        #type_alias_decl
-        #deserialize_func
-        #serialize_func
-    })
+    let outer_code = quote! {
+        #[allow(unused)]
+        #[allow(non_camel_case_types)]
+        pub type #alias = inner_impl :: #st_name;
+
+        impl #alias {
+            #[allow(unused)]
+            pub fn from_bytes(b: &[u8]) -> Result<Self, String> {
+                inner_impl:: #der_name (b)
+            }
+            #[allow(unused)]
+            pub fn to_bytes(&self) -> Result <Vec<u8>, String> {
+                inner_impl:: #ser_name (self)
+            }
+        }
+    };
+    Ok((
+        outer_code,
+        quote! {
+            #struct_decl
+            #deserialize_func
+            #serialize_func
+        },
+    ))
 }
