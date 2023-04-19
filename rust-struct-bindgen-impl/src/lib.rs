@@ -16,7 +16,6 @@ pub(crate) mod cache;
 pub(crate) mod helper;
 pub(crate) mod types;
 
-
 pub fn generate_bindgen_token_stream(btf: &Btf) -> Result<TokenStream> {
     let mut inner_impl = TokenStream::new();
     let mut outer_impl = TokenStream::new();
@@ -24,12 +23,8 @@ pub fn generate_bindgen_token_stream(btf: &Btf) -> Result<TokenStream> {
     for (ty_id, ty) in btf.types().iter().enumerate().map(|v| (v.0 as u32, v.1)) {
         match ty {
             BtfType::Struct(comp) => {
-                let (outer,inner) = generate_binding_for_struct(
-                    btf,
-                    comp,
-                    ty_id,
-                    &mut size_cache,
-                )?;
+                let (outer, inner) =
+                    generate_binding_for_struct(btf, comp, ty_id, &mut size_cache)?;
                 inner_impl.extend(inner);
                 outer_impl.extend(outer);
             }
@@ -51,7 +46,7 @@ pub fn generate_bindgen_token_stream(btf: &Btf) -> Result<TokenStream> {
             }
             BtfType::Float(ft) => inner_impl.extend(generate_binding_for_float(btf, ft, ty_id)?),
             BtfType::Enum(btf_enum) => {
-                let (outer,inner) = generate_binding_for_enum(btf, btf_enum, ty_id)?;
+                let (outer, inner) = generate_binding_for_enum(btf, btf_enum, ty_id)?;
                 inner_impl.extend(inner);
                 outer_impl.extend(outer);
             }
@@ -59,7 +54,7 @@ pub fn generate_bindgen_token_stream(btf: &Btf) -> Result<TokenStream> {
         }
     }
 
-    Ok(quote!{
+    Ok(quote! {
         #[allow(unused)]
         pub mod inner_impl {
             #inner_impl
