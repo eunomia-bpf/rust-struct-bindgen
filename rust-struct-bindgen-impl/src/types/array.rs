@@ -31,7 +31,7 @@ pub(crate) fn generate_binding_for_array(
                 }
                 if idx == b.len(){
                     return Err("zero byte not found when deserializing".to_string());
-                }
+                } 
                 String::from_utf8(b[..idx].to_vec()).map_err(|e|format!("Invalid utf8 strings when deserializling: {}",e))
             }
             #[allow(unused)]
@@ -40,6 +40,9 @@ pub(crate) fn generate_binding_for_array(
                 bytes.push(0);
                 if bytes.len() > #elem_count_lit {
                     return Err(format!("String is too long! only {} bytes is allowed", #elem_count_lit - 1));
+                }
+                while bytes.len() < #elem_count_lit {
+                    bytes.push(0);
                 }
                 Ok(bytes)
             }

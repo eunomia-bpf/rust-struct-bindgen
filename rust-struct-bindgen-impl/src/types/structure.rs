@@ -56,8 +56,9 @@ pub(crate) fn generate_binding_for_struct(
         #[allow(unused)]
         #[allow(non_camel_case_types)]
         #[repr(C)]
+        #[derive(Debug, Clone)]
         pub struct #st_name {
-            #(#field_names: #field_type_idents),*
+            #(pub #field_names: #field_type_idents),*
         }
     };
     let (der_name, ser_name) = func_names_ident(ty_id);

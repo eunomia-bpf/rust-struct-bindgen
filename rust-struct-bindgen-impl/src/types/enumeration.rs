@@ -54,6 +54,7 @@ pub(crate) fn generate_binding_for_enum(
             #[allow(unused)]
             #[allow(non_camel_case_types)]
             #[repr(#repr_ident)]
+            #[derive(Debug, Clone)]
             pub enum #ty_name_ident {
                 #(
                     #[allow(non_camel_case_types)]
