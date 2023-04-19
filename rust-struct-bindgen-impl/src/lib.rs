@@ -13,7 +13,8 @@ use types::{
     integer::generate_binding_for_integer, structure::generate_binding_for_struct,
 };
 pub(crate) mod cache;
-pub(crate) mod helper;
+/// Some helper functions
+pub mod helper;
 pub(crate) mod types;
 
 pub fn generate_bindgen_token_stream(btf: &Btf) -> Result<TokenStream> {
