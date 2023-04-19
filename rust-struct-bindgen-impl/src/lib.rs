@@ -9,8 +9,8 @@ pub use object;
 use quote::quote;
 use types::{
     array::generate_binding_for_array, enumeration::generate_binding_for_enum,
-    float::generate_binding_for_float, integer::generate_binding_for_integer,
-    structure::generate_binding_for_struct,
+    float::generate_binding_for_float, generate_binding_for_pointer,
+    integer::generate_binding_for_integer, structure::generate_binding_for_struct,
 };
 pub(crate) mod cache;
 pub(crate) mod helper;
@@ -50,6 +50,9 @@ pub fn generate_bindgen_token_stream(btf: &Btf) -> Result<TokenStream> {
                 inner_impl.extend(inner);
                 outer_impl.extend(outer);
             }
+            BtfType::Ptr(_) => {
+                inner_impl.extend(generate_binding_for_pointer(btf, ty_id)?);
+            }
             _ => continue,
         }
     }
@@ -61,26 +64,4 @@ pub fn generate_bindgen_token_stream(btf: &Btf) -> Result<TokenStream> {
         }
         #outer_impl
     })
-}
-
-#[cfg(test)]
-mod tests {
-    use quote::quote;
-
-    #[test]
-    fn test_1() {
-        let mut s = quote! {
-            struct s1 {
-                a:i32,
-                b:i64
-            }
-            impl s1 {
-                pub fn f1(&self) -> i64 {
-                    self.a as i64 + self.b
-                }
-            }
-        };
-        s.extend(quote! {struct s2(i32,i32);});
-        println!("{}", s.to_string());
-    }
 }
