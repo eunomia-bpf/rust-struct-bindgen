@@ -31,7 +31,7 @@ pub(crate) fn generate_binding_for_array(
                 }
                 if idx == b.len(){
                     return Err("zero byte not found when deserializing".to_string());
-                } 
+                }
                 String::from_utf8(b[..idx].to_vec()).map_err(|e|format!("Invalid utf8 strings when deserializling: {}",e))
             }
             #[allow(unused)]

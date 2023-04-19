@@ -1,9 +1,13 @@
 use anyhow::anyhow;
 use anyhow::Result;
 use btf::types::{Btf, BtfConst, BtfRestrict, BtfType, BtfVolatile};
+use faerie::ArtifactBuilder;
+use faerie::Decl;
+use faerie::SectionKind;
 use proc_macro2::{Ident, Span};
 use std::fmt::Display;
-
+use std::str::FromStr;
+use target_lexicon::triple;
 #[inline]
 /// Generate a type name for the specified type id
 pub(crate) fn ty_name(ty_id: impl Display) -> String {
@@ -42,4 +46,22 @@ pub(crate) fn lookup_types(btf: &Btf, ty_id: u32) -> Result<u32> {
         _ => ty_id,
     };
     Ok(result)
+}
+
+/// Currently, btfdump doesn't support load BTF from a btf archive
+/// So if we want to use btf archive, we have to wrap that into an ELF..
+pub fn create_elf_with_btf_section(btf_data: &[u8], is_64: bool) -> Result<Vec<u8>> {
+    let mut obj = ArtifactBuilder::new(if is_64 {
+        triple!("x86_64-unknown-unknown-unknown-elf")
+    } else {
+        triple!("i386-unknown-unknown-unknown-elf")
+    })
+    .name("btf-archive.bpf.o".into())
+    .finish();
+    obj.declare(".BTF", Decl::section(SectionKind::Data))
+        .map_err(|e| anyhow!("Failed to build ELF from BTF: {}", e))?;
+    obj.define(".BTF", btf_data.to_vec())
+        .map_err(|e| anyhow!("Failed to build ELF from BTF: {}", e))?;
+    obj.emit()
+        .map_err(|e| anyhow!("Failed to build ELF: {}", e))
 }
