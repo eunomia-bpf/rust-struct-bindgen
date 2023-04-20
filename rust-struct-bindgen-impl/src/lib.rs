@@ -1,3 +1,9 @@
+//!  SPDX-License-Identifier: MIT
+//!
+//! Copyright (c) 2023, eunomia-bpf
+//! All rights reserved.
+//!
+
 //!
 //! # Bindgen implementation
 //! Here is the core implementation of `rust-struct-bindgen`, which accepts a BTF or ELF file and yields the TokenStream-represented rust source.

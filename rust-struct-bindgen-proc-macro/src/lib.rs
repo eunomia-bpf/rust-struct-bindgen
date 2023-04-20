@@ -1,3 +1,8 @@
+//!  SPDX-License-Identifier: MIT
+//!
+//! Copyright (c) 2023, eunomia-bpf
+//! All rights reserved.
+//!
 use proc_macro::TokenStream;
 use rust_struct_bindgen_impl::{
     btf::types::Btf, generate_bindgen_token_stream, helper::create_elf_with_btf_section,

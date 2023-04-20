@@ -1,3 +1,10 @@
+
+//!  SPDX-License-Identifier: MIT
+//!
+//! Copyright (c) 2023, eunomia-bpf
+//! All rights reserved.
+//!
+
 use anyhow::{anyhow, Context};
 use clap::Parser;
 use rust_struct_bindgen_impl::{
