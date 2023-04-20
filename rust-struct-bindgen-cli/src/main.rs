@@ -13,9 +13,15 @@ struct Args {
         long = "btf"
     )]
     use_btf: bool,
+    #[arg(
+        help = "Formatted the generated code. Requires the installation of `rustfmt`",
+        short = 'f',
+        long = "format"
+    )]
+    format: bool,
     #[arg(help = "The ELF file path. If with `use_btf`, should be the btf archive path")]
     file_path: String,
-    #[arg(help = "Out file. If not given, print to stdout")]
+    #[arg(help = "Out file. If not given, print to stdout", short = 'o')]
     out_file: Option<String>,
 }
 fn main() -> anyhow::Result<()> {
@@ -33,6 +39,12 @@ fn main() -> anyhow::Result<()> {
     let generated_source = generate_bindgen_token_stream(&btf)
         .with_context(|| anyhow!("Failed to generate rust code"))?
         .to_string();
+    let generated_source = if args.format {
+        rustfmt_wrapper::rustfmt(generated_source)
+            .with_context(|| anyhow!("Failed to format the code"))?
+    } else {
+        generated_source
+    };
     if let Some(p) = args.out_file {
         std::fs::write(p, generated_source).with_context(|| anyhow!("Failed to write"))?;
     } else {
