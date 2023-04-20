@@ -1,3 +1,8 @@
+//!  SPDX-License-Identifier: MIT
+//!
+//! Copyright (c) 2023, eunomia-bpf
+//! All rights reserved.
+//!
 use crate::cache::SizeResolveCache;
 use crate::helper::{func_names_ident, lookup_types, ty_name};
 use anyhow::anyhow;

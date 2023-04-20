@@ -1,3 +1,8 @@
+//!  SPDX-License-Identifier: MIT
+//!
+//! Copyright (c) 2023, eunomia-bpf
+//! All rights reserved.
+//!
 use anyhow::Result;
 use btf::types::{Btf, BtfArray, BtfIntEncoding, BtfType};
 use proc_macro2::{Ident, Literal, Span, TokenStream};
